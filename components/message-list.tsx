@@ -68,7 +68,7 @@ export function MessageList() {
             groupKey = 'Today';
           } else if (isYesterday(messageDate)) {
             groupKey = 'Yesterday';
-          } else if (isThisWeek(messageDate, { weekStartsOn: 1 /* Monday */ })) {
+          } else if (isThisWeek(messageDate, { weekStartsOn: 0 /* Sunday */ })) {
             groupKey = 'This Week';
           } else {
             groupKey = format(messageDate, 'MMMM d, yyyy');

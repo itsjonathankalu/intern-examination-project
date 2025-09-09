@@ -24,7 +24,7 @@ This project is a message viewer interface for an AI messaging platform, built a
 
 ## Assumptions
 
-- **"This Week" Definition:** "This Week" is defined as starting on Monday.
+- **"This Week" Definition:** "This Week" is defined as starting on Sunday.
 - **Scrolling Container:** The primary scrolling container is assumed to be the main `window` object for the purpose of the "jump to bottom" button's scroll detection.
 
 ## Setup and Installation

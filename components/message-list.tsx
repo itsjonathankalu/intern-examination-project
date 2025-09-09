@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowDown } from 'lucide-react';
+import { ArrowDown, Copy, Check, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 import { isToday, isYesterday, isThisWeek, format } from 'date-fns';
 
@@ -33,6 +33,9 @@ export function MessageList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showJumpToBottom, setShowJumpToBottom] = useState(false);
+  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -46,20 +49,14 @@ export function MessageList() {
         }
         const rawData: RawMessageData[] = await response.json();
 
-        // Transform the raw data into the format our component uses
         const transformedData: Message[] = rawData.map((rawMsg, index) => ({
-          id: `${rawMsg.message_date}-${index}`, // Create a semi-unique ID
+          id: `${rawMsg.message_date}-${index}`,
           content: rawMsg.message_text,
           role: rawMsg.bot_sender ? 'assistant' : 'user',
           createdAt: rawMsg.message_date,
         }));
 
-        const validMessages = transformedData.filter(m => m.createdAt);
-
-        const invalidMessage = validMessages.find(m => isNaN(new Date(m.createdAt).getTime()));
-        if (invalidMessage) {
-          throw new Error(`Invalid date format found in data: "${invalidMessage.createdAt}"`);
-        }
+        const validMessages = transformedData.filter(m => m.createdAt && !isNaN(new Date(m.createdAt).getTime()));
         
         const sortedMessages = validMessages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
@@ -102,18 +99,29 @@ export function MessageList() {
   }, [loading]);
 
   useEffect(() => {
-    const container = scrollContainerRef.current;
     const handleScroll = () => {
-      if (container) {
-        const { scrollTop, scrollHeight, clientHeight } = container;
-        const isScrolledUp = scrollHeight - scrollTop > clientHeight * 1.5;
-        setShowJumpToBottom(isScrolledUp);
-      }
+      const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+      const isScrolledUp = scrollHeight - scrollTop > clientHeight * 1.5;
+      setShowJumpToBottom(isScrolledUp);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const handleSelectMessage = (messageId: string) => {
+    if (selectedMessageId === messageId) {
+      setSelectedMessageId(null); // Deselect if already selected
+    } else {
+      setSelectedMessageId(messageId);
+    }
+  };
+
+  const handleCopyMessage = (content: string) => {
+    navigator.clipboard.writeText(content).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000); // Reset icon after 2 seconds
+    });
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -125,7 +133,12 @@ export function MessageList() {
   };
 
   if (loading) {
-    return <div className="text-center">Loading messages...</div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="mr-3 h-8 w-8 animate-spin" />
+        <p className="text-xl">Loading messages...</p>
+      </div>
+    );
   }
 
   if (error) {
@@ -144,15 +157,22 @@ export function MessageList() {
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={clsx('flex', {
+                  className={clsx('flex items-center gap-2', {
                     'justify-end': message.role === 'user',
                     'justify-start': message.role === 'assistant',
                   })}
                 >
+                  {selectedMessageId === message.id && message.role === 'assistant' && (
+                    <Button variant="ghost" size="icon" onClick={() => handleCopyMessage(message.content)}>
+                      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  )}
                   <Card
-                    className={clsx('max-w-xs md:max-w-md', {
+                    onClick={() => handleSelectMessage(message.id)}
+                    className={clsx('max-w-xs md:max-w-md cursor-pointer', {
                       'bg-primary text-primary-foreground': message.role === 'user',
                       'bg-muted': message.role === 'assistant',
+                      'ring-2 ring-ring ring-offset-2 ring-offset-background': selectedMessageId === message.id,
                     })}
                   >
                     <CardContent className="p-4">
@@ -162,6 +182,11 @@ export function MessageList() {
                       </p>
                     </CardContent>
                   </Card>
+                  {selectedMessageId === message.id && message.role === 'user' && (
+                    <Button variant="ghost" size="icon" onClick={() => handleCopyMessage(message.content)}>
+                      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>

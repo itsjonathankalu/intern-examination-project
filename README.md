@@ -47,9 +47,6 @@ This project is a message viewer interface for an AI messaging platform, built a
     ```
 5.  Open [http://localhost:3000](http://localhost:3000) in your browser to see the result.
 
-## Known Limitations & Areas for Improvement
+## Bonus Features
 
-- **No Real-Time Updates:** The message list is fetched only once on initial load. For a real chat application, implementing real-time updates via WebSockets or polling would be necessary.
-- **Accessibility (ARIA):** While `shadcn/ui` provides a good foundation for accessibility, further enhancements such as adding specific ARIA labels and roles could be implemented.
-- **Keyboard Navigation:** The application does not yet support keyboard navigation between messages.
-- **Search Functionality:** A message search feature is not yet implemented.
+- **Message Selection & Copy:** Click on any message to select it, which reveals a button to copy the message content to the clipboard.
